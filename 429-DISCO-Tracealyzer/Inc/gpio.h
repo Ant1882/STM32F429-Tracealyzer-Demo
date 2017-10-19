@@ -1,7 +1,8 @@
 /**
   ******************************************************************************
-  * File Name          : freertos.c
-  * Description        : Code for freertos applications
+  * File Name          : gpio.h
+  * Description        : This file contains all the functions prototypes for 
+  *                      the gpio  
   ******************************************************************************
   * This notice applies to any and all portions of this file
   * that are not between comment pairs USER CODE BEGIN and
@@ -46,104 +47,42 @@
   ******************************************************************************
   */
 
-/* Includes ------------------------------------------------------------------*/
-#include "FreeRTOS.h"
-#include "task.h"
-#include "cmsis_os.h"
+/* Define to prevent recursive inclusion -------------------------------------*/
+#ifndef __gpio_H
+#define __gpio_H
+#ifdef __cplusplus
+ extern "C" {
+#endif
 
-/* USER CODE BEGIN Includes */     
-#include "gpio.h"
+/* Includes ------------------------------------------------------------------*/
+#include "stm32f4xx_hal.h"
+#include "main.h"
+
+/* USER CODE BEGIN Includes */
+
 /* USER CODE END Includes */
 
-/* Variables -----------------------------------------------------------------*/
-osThreadId defaultTaskHandle;
-osThreadId LED_TaskHandle;
+/* USER CODE BEGIN Private defines */
 
-/* USER CODE BEGIN Variables */
+/* USER CODE END Private defines */
 
-/* USER CODE END Variables */
+void MX_GPIO_Init(void);
 
-/* Function prototypes -------------------------------------------------------*/
-void StartDefaultTask(void const * argument);
-void LEDtask(void const * argument);
+/* USER CODE BEGIN Prototypes */
 
-extern void MX_USB_DEVICE_Init(void);
-void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
+/* USER CODE END Prototypes */
 
-/* USER CODE BEGIN FunctionPrototypes */
-
-/* USER CODE END FunctionPrototypes */
-
-/* Hook prototypes */
-
-/* Init FreeRTOS */
-
-void MX_FREERTOS_Init(void) {
-  /* USER CODE BEGIN Init */
-       
-  /* USER CODE END Init */
-
-  /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
-
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
-
-  /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
-
-  /* Create the thread(s) */
-  /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
-  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
-
-  /* definition and creation of LED_Task */
-  osThreadDef(LED_Task, LEDtask, osPriorityNormal, 0, 128);
-  LED_TaskHandle = osThreadCreate(osThread(LED_Task), NULL);
-
-  /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
-
-  /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
+#ifdef __cplusplus
 }
+#endif
+#endif /*__ pinoutConfig_H */
 
-/* StartDefaultTask function */
-void StartDefaultTask(void const * argument)
-{
-  /* init code for USB_DEVICE */
-  MX_USB_DEVICE_Init();
+/**
+  * @}
+  */
 
-  /* USER CODE BEGIN StartDefaultTask */
-  /* Infinite loop */
-  for(;;)
-  {
-	  HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
-	  osDelay(100);
-  }
-  /* USER CODE END StartDefaultTask */
-}
-
-/* LEDtask function */
-void LEDtask(void const * argument)
-{
-  /* USER CODE BEGIN LEDtask */
-  /* Infinite loop */
-  for(;;)
-  {
-	  HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
-	  osDelay(1000);
-  }
-  /* USER CODE END LEDtask */
-}
-
-/* USER CODE BEGIN Application */
-     
-/* USER CODE END Application */
+/**
+  * @}
+  */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
