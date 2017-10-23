@@ -103,7 +103,7 @@ int main(void)
   MX_GPIO_Init();
 
   /* USER CODE BEGIN 2 */
-
+  MX_USB_DEVICE_Init();
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */

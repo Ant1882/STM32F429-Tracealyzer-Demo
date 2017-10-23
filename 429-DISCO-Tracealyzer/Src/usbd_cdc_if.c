@@ -75,8 +75,8 @@
 /* USER CODE BEGIN PRIVATE_DEFINES */
 /* Define size for the receive and transmit buffer over CDC */
 /* It's up to user to redefine and/or remove those define */
-#define APP_RX_DATA_SIZE  4
-#define APP_TX_DATA_SIZE  4
+#define APP_RX_DATA_SIZE  64
+#define APP_TX_DATA_SIZE  64
 /* USER CODE END PRIVATE_DEFINES */
 /**
   * @}
@@ -105,6 +105,14 @@ uint8_t UserRxBufferHS[APP_RX_DATA_SIZE];
 uint8_t UserTxBufferHS[APP_TX_DATA_SIZE];
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
+#define BUFSIZE 64
+
+typedef struct{
+	uint32_t idx;
+	uint8_t data[BUFSIZE];
+}recBuf;
+
+recBuf commandBuffer;
 /* USER CODE END PRIVATE_VARIABLES */
 
 /**
@@ -177,6 +185,7 @@ static int8_t CDC_DeInit_HS(void)
   /* USER CODE END 9 */ 
 }
 
+uint32_t baudrate;
 /**
   * @brief  CDC_Control_HS
   *         Manage the CDC class requests
@@ -232,7 +241,15 @@ static int8_t CDC_Control_HS  (uint8_t cmd, uint8_t* pbuf, uint16_t length)
     break;
 
   case CDC_GET_LINE_CODING:     
-
+	  //I was missing this part
+	  baudrate = 115200;
+	  pbuf[0] = (uint8_t)(baudrate);
+	  pbuf[1] = (uint8_t)(baudrate >> 8);
+	  pbuf[2] = (uint8_t)(baudrate >> 16);
+	  pbuf[3] = (uint8_t)(baudrate >> 24);
+	  pbuf[4] = 0;
+	  pbuf[5] = 0;
+	  pbuf[6] = 8;
     break;
 
   case CDC_SET_CONTROL_LINE_STATE:
@@ -268,7 +285,13 @@ static int8_t CDC_Control_HS  (uint8_t cmd, uint8_t* pbuf, uint16_t length)
   */
 static int8_t CDC_Receive_HS (uint8_t* Buf, uint32_t *Len)
 {
-  /* USER CODE BEGIN 11 */ 
+	/* USER CODE BEGIN 11 */
+	for( uint32_t i=0;i<* Len;i++)
+	{
+		commandBuffer.data[commandBuffer.idx]=Buf[i];
+		commandBuffer.idx++;
+	}
+
   USBD_CDC_SetRxBuffer(&hUsbDeviceHS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceHS);
   return (USBD_OK);
@@ -300,6 +323,51 @@ uint8_t CDC_Transmit_HS(uint8_t* Buf, uint16_t Len)
 }
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
+/* The READ function, used in trcStreamingPort.h */
+int32_t trcCDCReceive(void *data, uint32_t size, int32_t* NumBytes)
+{
+	uint32_t i,diff;
+
+	if(commandBuffer.idx>0)
+	{
+		if (size >= commandBuffer.idx) // more than what is stored, number of bytes will be .idx
+		{
+			memcpy(data,commandBuffer.data, commandBuffer.idx);
+			*NumBytes=commandBuffer.idx;
+			commandBuffer.idx=0; // Make the buffer ready for a new command
+		}
+		else  //If some data in the buffer is not read
+		{
+			diff = commandBuffer.idx-size;
+			memcpy(data,commandBuffer.data, size);
+			for(i=0;i<diff;i++)
+			{
+				commandBuffer.data[i]=commandBuffer.data[i+size];
+			}
+			*NumBytes=size;
+			commandBuffer.idx=diff;
+		}
+	}
+	else
+	{
+		*NumBytes=0;
+	}
+	return 0;
+}
+
+/* The WRITE function, used in trcStreamingPort.h */
+int32_t trcCDCTransmit(void* data, uint32_t size, int32_t * noOfBytesSent )
+{
+	int32_t result;
+	result=CDC_Transmit_HS(data, size);
+	*noOfBytesSent = size;
+
+	/* Return value should be 0 on success (not sure what the value of USBD_OK is) */
+	if (result == USBD_OK)
+		return 0;
+	else
+		return -1;
+}
 /* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */
 
 /**
